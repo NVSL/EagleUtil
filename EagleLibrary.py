@@ -18,7 +18,14 @@ class EagleLibrary(EagleFile):
 #            self.initialize()
 #        elif initfrom is not None:
 #            self.open(initfrom)
-                
+               
+    def addPackage(self, package):
+        name = package.get("name").upper()
+        if self.findPackage(name) is None:
+            self._packages.append(package)
+        else:
+            raise EagleError("Package '" + name + "' already exists")
+
     def newPackage(self, name):
         name = name.upper()
         if self.findPackage(name) is None:
@@ -81,11 +88,6 @@ class EagleLibrary(EagleFile):
         if p is not None:
             self.getDevicesets().remove(p)
     
-    def write(self, f):
-        if self._et is None:
-            raise EagleError("Trying to write out element-based library")
-        self._et.write(f)
-
     def getLibraryContainer(self):
         return self._root.find("drawing")
 

@@ -1,7 +1,10 @@
 from lxml import etree as ET;
 #from lxml import etree as ET;
 import sys
+import XMLUtil
+
 from EagleError import *
+
 class EagleFile:
 
     _parts = ["layers", "settings", "grid"]
@@ -48,6 +51,6 @@ class EagleFile:
         return self._root
 
     def write(self, f):
-        self._et.write(f)
+        XMLUtil.formatAndWrite(self._et, f)
 
 EagleFile.addAccessors(EagleFile, EagleFile._parts)
