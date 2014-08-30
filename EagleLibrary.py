@@ -18,7 +18,10 @@ class EagleLibrary(EagleFile):
 #            self.initialize()
 #        elif initfrom is not None:
 #            self.open(initfrom)
-               
+            
+    def getLibrary(self):
+        return self._library
+
     def addPackage(self, package):
         name = package.get("name").upper()
         if self.findPackage(name) is None:
@@ -103,5 +106,11 @@ class EagleLibrary(EagleFile):
         if incumbant is not None:
             container.remove(incumbant)
         container.append(copy.deepcopy(element))
+
+    
+def findPackageOfVariantInLibraries(libraries, lib, device, variant):
+    l = libraries.find("library[@name='" + lib +"']")
+    s = l.find("devicesets/deviceset[@name='" + device +"']")
+    return s.find("devices/device[@name='" + variant + "']").get("package")
 
 EagleFile.addAccessors(EagleLibrary, EagleLibrary._libraryParts)
