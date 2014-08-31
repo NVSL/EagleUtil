@@ -113,4 +113,15 @@ def findPackageOfVariantInLibraries(libraries, lib, device, variant):
     s = l.find("devicesets/deviceset[@name='" + device +"']")
     return s.find("devices/device[@name='" + variant + "']").get("package")
 
+
+def findTechnologyByNameInDeviceSetInLibraries(libraries, lib, device, variant,tech):
+    r = libraries.xpath("library[@name='" + lib +"']" + 
+                        "/devicesets/deviceset[@name='" + device +"']"+
+                        "/devices/device[@name='" + variant + "']" + 
+                        "/technologies/technology[@name='']")
+    if len(r) != 0:
+        return r[0]
+    else:
+        return None
+
 EagleFile.addAccessors(EagleLibrary, EagleLibrary._libraryParts)
