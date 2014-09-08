@@ -52,5 +52,13 @@ class EagleFile:
 
     def write(self, f):
         XMLUtil.formatAndWrite(self._et, f)
+        
+    def addLibrariesFrom (self, other):
+        assert( isinstance(other, EagleFile) )
+        if hasattr(other, "getLibrary"):
+            self.getLibraries().append(copy.deepcopy(other.getLibrary()))
+        else:
+            for library in other.getLibraries():
+                self.getLibraries().append(library)
 
 EagleFile.addAccessors(EagleFile, EagleFile._parts)
