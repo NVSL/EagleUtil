@@ -107,12 +107,15 @@ class EagleLibrary(EagleFile):
             container.remove(incumbant)
         container.append(copy.deepcopy(element))
 
+def findPinsOfVariantInLibraries(libraries, lib, device, variant):
+    
+    
+    
     
 def findPackageOfVariantInLibraries(libraries, lib, device, variant):
     l = libraries.find("library[@name='" + lib +"']")
     s = l.find("devicesets/deviceset[@name='" + device +"']")
     return s.find("devices/device[@name='" + variant + "']").get("package")
-
 
 def findTechnologyByNameInDeviceSetInLibraries(libraries, lib, device, variant,tech):
     r = libraries.xpath("library[@name='" + lib +"']" + 
