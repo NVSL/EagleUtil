@@ -107,10 +107,6 @@ class EagleLibrary(EagleFile):
             container.remove(incumbant)
         container.append(copy.deepcopy(element))
 
-def findPinsOfVariantInLibraries(libraries, lib, device, variant):
-    
-    
-    
     
 def findPackageOfVariantInLibraries(libraries, lib, device, variant):
     l = libraries.find("library[@name='" + lib +"']")
