@@ -55,10 +55,68 @@ class EagleFile:
         
     def addLibrariesFrom (self, other):
         assert( isinstance(other, EagleFile) )
-        if hasattr(other, "getLibrary"):
-            self.getLibraries().append(copy.deepcopy(other.getLibrary()))
-        else:
-            for library in other.getLibraries():
-                self.getLibraries().append(library)
+        EagleFile.combineLibraries(self._root, other._root)
+        
+    @staticmethod
+    def combineLibraries (dest, src):
+    	srcLibs = src.findall("./drawing/schematic/libraries/library")
+    	destLibs = dest.findall("./drawing/schematic/libraries/library")
+
+    	destLibNames = []
+
+    	for lib in destLibs:
+    		destLibNames.append(lib.attrib["name"])
+
+    	for lib in srcLibs:
+    		if lib.attrib["name"] not in destLibNames:
+    			dest.find('./drawing/schematic/libraries').append(lib)
+
+    	#then match up all lib pairs with the same name and combine
+
+    	for dLib in destLibs:
+    		for sLib in srcLibs:
+    			if dLib.attrib['name'] == sLib.attrib['name']:
+	
+    				#combine packages
+    				dPackageNames = []
+    				for package in dLib.findall('./packages/package'):
+    					dPackageNames.append(package.attrib['name'])
+		
+    				for package in sLib.findall('./packages/package'):
+    					if package.attrib['name'] not in dPackageNames:
+    						dLib.find('packages').append(package)
+			
+	
+    				#combine symbols
+    				dSymbolNames = []
+    				for symbol in dLib.findall('symbols/symbol'):
+    					dSymbolNames.append(symbol.attrib['name'])
+		
+    				for symbol in sLib.findall('symbols/symbol'):
+    					if symbol.attrib['name'] not in dSymbolNames:
+    						dLib.find('symbols').append(symbol)
+			
+    				#combine devicesets
+    				dDevicesetNames = []
+    				for deviceset in dLib.findall('devicesets/deviceset'):
+    					dDevicesetNames.append(deviceset.attrib['name'])
+		
+    				for deviceset in sLib.findall('devicesets/deviceset'):
+    					if deviceset.attrib['name'] not in dDevicesetNames:
+    						dLib.find('devicesets').append(deviceset)
+
+    				#match up devicesets for combining devices
+    				for dDeviceset in dLib.findall('devicesets/deviceset'):
+    					for sDeviceset in sLib.findall('devicesets/deviceset'):
+    						if dDeviceset.attrib['name'] == sDeviceset.attrib['name']:
+				
+    							#combine devices
+    							dDeviceNames = []
+    							for device in dDeviceset.findall('device'):
+    								dDeviceNames.append(device.attrib['name'])
+	
+    							for device in sDeviceset.findall('device'):
+    								if device.attrib['name'] not in dDeviceNames:
+    									dDeviceset.append(device)
 
 EagleFile.addAccessors(EagleFile, EagleFile._parts)

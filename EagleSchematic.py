@@ -117,13 +117,7 @@ class EagleSchematic(EagleFile):
         return newName
         
     def connectNets (self, nets, newName=None):
-        if newName is None:
-            newName = nets[0]
-            
-        myNets = self.getRoot().findall(".//schematic/sheets/sheet/nets/net")
-        for net in myNets:
-            net.set("name", newName)
-        
+        raise NotImplementedError("Make me!")
         return newName
                 
                 
