@@ -215,8 +215,24 @@ class EagleSchematic(EagleFile):
             
             print "Processing part:", attrib["name"]
             
+            
+            # Find libraries
+            print "Looking for library:", attrib["library"]
+            
+            # get lib from board
+            board_libraries = board.getLibraries()
+            library = board_libraries.find("./library/[@name='" + attrib["library"] + "']")
+            
+            # get lib from sch
+            sch_libraries = self.getLibraries()
+            sch_library = sch_libraries.find("./library/[@name='" + attrib["library"] + "']")
+            print "Found:", library
+            
+            
+            # Find device definition
             device = part.get("device")
             
+            # check if device is defined. If it isn't then it is just a dummy symbol like a ground symbol.
             if (device is None) or (device == ""):
                 print "No device for part. Ignoring."
                 print
@@ -225,19 +241,15 @@ class EagleSchematic(EagleFile):
                 print "Device:", device
             
             
+            device_set = part.get("deviceset")
+            print "Device set:", device_set
+            
+            devices = library.find("devicesets/deviceset/[@name='"+device_set+"']").find("devices")
+            device_def = devices.find("device/[@name='"+ device + "']")
+            
+            
             # find a package...
-            board_libraries = board.getLibraries()
-            
-            
-            
-            print "Looking for library:", attrib["library"]
-            
-            library = board_libraries.find("./library/[@name='" + attrib["library"] + "']")
-            
-            print "Found:", library
-            
-            
-            package = library.find("./packages/package").get("name")
+            package = device_def.get("package")
             
             
             
