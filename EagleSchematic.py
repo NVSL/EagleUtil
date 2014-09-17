@@ -215,6 +215,15 @@ class EagleSchematic(EagleFile):
             
             print "Processing part:", attrib["name"]
             
+            device = part.get("device")
+            
+            if (device is None) or (device == ""):
+                print "No device for part. Ignoring."
+                continue
+            else:
+                print "Device:", device
+            
+            
             # find a package...
             board_libraries = board.getLibraries()
             
