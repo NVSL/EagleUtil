@@ -219,6 +219,7 @@ class EagleSchematic(EagleFile):
             
             if (device is None) or (device == ""):
                 print "No device for part. Ignoring."
+                print
                 continue
             else:
                 print "Device:", device
