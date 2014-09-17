@@ -3,6 +3,9 @@ import copy
 from EagleError import *
 from EagleSchematicSheet import *
 from EagleFile import *
+import EagleBoard
+import EagleLibrary
+import unicodedata
 
 class EagleSchematic(EagleFile):
     _schematic = None;
@@ -35,7 +38,7 @@ class EagleSchematic(EagleFile):
                         r[pinref.get("part") + "." + pinref.get("pin")] = n.get("name")
         return r
 
-    def getLibraryContainer(self):
+    def getLibraryContainer (self):
         return self.getLibraries()
         
     def getSheet (self, index):
@@ -119,7 +122,172 @@ class EagleSchematic(EagleFile):
     def connectNets (self, nets, newName=None):
         raise NotImplementedError("Make me!")
         return newName
+        
+    def addLibrariesFrom (self, other):
+        assert( isinstance(other, EagleSchematic) )
+        EagleSchematic.combineLibraries(self._root, other._root)
+        
+    @staticmethod
+    def combineLibraries (dest, src):
+    	srcLibs = src.findall("./drawing/schematic/libraries/library")
+    	destLibs = dest.findall("./drawing/schematic/libraries/library")
+
+    	destLibNames = []
+
+    	for lib in destLibs:
+    		destLibNames.append(lib.attrib["name"])
+
+    	for lib in srcLibs:
+    		if lib.attrib["name"] not in destLibNames:
+    			dest.find('./drawing/schematic/libraries').append(lib)
+
+    	#then match up all lib pairs with the same name and combine
+
+    	for dLib in destLibs:
+    		for sLib in srcLibs:
+    			if dLib.attrib['name'] == sLib.attrib['name']:
+	
+    				#combine packages
+    				dPackageNames = []
+    				for package in dLib.findall('./packages/package'):
+    					dPackageNames.append(package.attrib['name'])
+		
+    				for package in sLib.findall('./packages/package'):
+    					if package.attrib['name'] not in dPackageNames:
+    						dLib.find('packages').append(package)
+			
+	
+    				#combine symbols
+    				dSymbolNames = []
+    				for symbol in dLib.findall('symbols/symbol'):
+    					dSymbolNames.append(symbol.attrib['name'])
+		
+    				for symbol in sLib.findall('symbols/symbol'):
+    					if symbol.attrib['name'] not in dSymbolNames:
+    						dLib.find('symbols').append(symbol)
+			
+    				#combine devicesets
+    				dDevicesetNames = []
+    				for deviceset in dLib.findall('devicesets/deviceset'):
+    					dDevicesetNames.append(deviceset.attrib['name'])
+		
+    				for deviceset in sLib.findall('devicesets/deviceset'):
+    					if deviceset.attrib['name'] not in dDevicesetNames:
+    						dLib.find('devicesets').append(deviceset)
+
+    				#match up devicesets for combining devices
+    				for dDeviceset in dLib.findall('devicesets/deviceset'):
+    					for sDeviceset in sLib.findall('devicesets/deviceset'):
+    						if dDeviceset.attrib['name'] == sDeviceset.attrib['name']:
+				
+    							#combine devices
+    							dDeviceNames = []
+    							for device in dDeviceset.findall('device'):
+    								dDeviceNames.append(device.attrib['name'])
+	
+    							for device in sDeviceset.findall('device'):
+    								if device.attrib['name'] not in dDeviceNames:
+    									dDeviceset.append(device)
                 
+    def toBoard (self, libraries, template_filename):
+        print
+        print "Converting schematic to board."
+        # initialize with template
+        board = EagleBoard.EagleBoard(template_filename)
+        
+        # bring in libraries from external libraries, every thing we need is not in the sch file :(
+        for library_file in libraries:
+            lbr = EagleLibrary.EagleLibrary(library_file)
+            lbr.getLibrary().set("name", library_file.split("/")[-1].replace(".lbr",""))
+            board.getLibraries().append(copy.deepcopy(lbr.getLibrary()))
+            
+        # now we can add the components, known as elements, to the brd file
+        elements = board.getElements()
+        
+        parts = self.getParts()
+        parts = parts.findall("*")
+        
+        print "Parts in schematic:"
+        for part in parts:
+            attrib = {}
+            attrib["name"] = part.get("name")
+            attrib["library"] = part.get("library")
+            
+            print "Processing part:", attrib["name"]
+            
+            # find a package...
+            board_libraries = board.getLibraries()
+            
+            
+            
+            print "Looking for library:", attrib["library"]
+            
+            library = board_libraries.find("./library/[@name='" + attrib["library"] + "']")
+            
+            print "Found:", library
+            
+            
+            package = library.find("./packages/package").get("name")
+            
+            
+            
+            attrib["package"] = package
+            
+            
+            
+            #attrib["value"] = None
+            attrib["x"] = "0"
+            attrib["y"] = "0"
+            attrib["smashed"] = "yes"
+            attrib["rot"] = "R0"
+            
+            print "Got:", attrib
                 
+            
+            
+            
+            new_element = ET.SubElement(elements, "element", attrib)
+            print
+        
+        return board
+        
+        
 
 EagleFile.addAccessors(EagleSchematic, EagleSchematic._schematicParts)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
