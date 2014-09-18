@@ -188,6 +188,49 @@ class EagleSchematic(EagleFile):
     							for device in sDeviceset.findall('device'):
     								if device.attrib['name'] not in dDeviceNames:
     									dDeviceset.append(device)
+                                        
+    def gatePinToPad (self, part, gate, pin):
+        #print
+        #print "Mapping pin to pad."
+        part = self.getParts().find("part/[@name='"+part+"']")
+        #ET.dump(part)
+        
+        
+        lib = part.get("library")
+        deviceset = part.get("deviceset")
+        device = part.get("device")
+        
+        # check for dummy part, like ground symbol
+        if (deviceset is None) or (deviceset == ""): return None
+        if (device is None) or (device == ""): return None
+        
+        #for l in self.getLibraries().findall("library"):
+            #print l.get("name")
+            
+        #print "Want:", lib
+        #print "xpath:", "library/[@name='"+lib+"']"
+        lib = self.getLibraries().find("library/[@name='"+lib+"']")
+        #print "Got:", lib
+        
+        #print "Want:", deviceset
+        deviceset = lib.find("devicesets/deviceset/[@name='"+deviceset+"']")
+        #print "Got:", deviceset
+        
+        #print "Want:", device
+        device = deviceset.find("devices/device/[@name='"+device+"']")
+        #print "Got:", device
+        
+        #ET.dump(device)
+        
+        connect = device.find("connects/connect/[@gate='"+gate+"'][@pin='"+pin+"']")
+        
+        #ET.dump(connect)
+        
+        pad = connect.get("pad")
+        
+        #print "Pad:", pad
+        
+        return pad
                 
     def toBoard (self, libraries, template_filename):
         print
@@ -195,11 +238,7 @@ class EagleSchematic(EagleFile):
         # initialize with template
         board = EagleBoard.EagleBoard(template_filename)
         
-        # bring in libraries from external libraries, every thing we need is not in the sch file :(
-        for library_file in libraries:
-            lbr = EagleLibrary.EagleLibrary(library_file)
-            lbr.getLibrary().set("name", library_file.split("/")[-1].replace(".lbr",""))
-            board.getLibraries().append(copy.deepcopy(lbr.getLibrary()))
+
             
         # now we can add the components, known as elements, to the brd file
         elements = board.getElements()
@@ -207,17 +246,62 @@ class EagleSchematic(EagleFile):
         parts = self.getParts()
         parts = parts.findall("*")
         
+        
+        #load libraries
+        print
+        print "Loading libraries."
+        needed_libraries = []
+        needed_device_sets = {}
+        
+        for part in parts:
+            name = part.get("library")
+            needed_libraries.append(name)
+            
+            if needed_device_sets.get(name,None) == None:
+                needed_device_sets[name] = []
+            
+            needed_device_sets[name].append(part.get("deviceset"))
+        
+        # bring in libraries from external libraries, every thing we need is not in the sch file :(
+        for library_file in libraries:
+            lbr = EagleLibrary.EagleLibrary(library_file)
+            name = library_file.split("/")[-1].replace(".lbr","")
+            
+            print "Processing library:", name
+            
+            if name not in needed_libraries:
+                continue
+            
+            #print "Needed device sets:", needed_device_sets[name]
+                
+            lbr.getLibrary().set("name", name)
+            
+            for deviceset in lbr.getLibrary().findall("./devicesets/deviceset"):
+                #print "Checking device set:", deviceset.get("name")
+                if deviceset.get("name") not in needed_device_sets[name]:
+                    #print "Removing device set:", deviceset.get("name")
+                    lbr._root.find("./drawing/library/devicesets").remove(deviceset)
+                    
+            board.getLibraries().append(copy.deepcopy(lbr.getLibrary()))
+        
+        
+        pin_mapping = {}
+        
+        print
         print "Parts in schematic:"
         for part in parts:
             attrib = {}
-            attrib["name"] = part.get("name")
+            name = part.get("name")
+            attrib["name"] = name
+            
+            pin_mapping[name] = {}
+            
             attrib["library"] = part.get("library")
             
             print "Processing part:", attrib["name"]
             
-            
             # Find libraries
-            print "Looking for library:", attrib["library"]
+            #print "Looking for library:", attrib["library"]
             
             # get lib from board
             board_libraries = board.getLibraries()
@@ -226,7 +310,7 @@ class EagleSchematic(EagleFile):
             # get lib from sch
             sch_libraries = self.getLibraries()
             sch_library = sch_libraries.find("./library/[@name='" + attrib["library"] + "']")
-            print "Found:", library
+            #print "Found:", library
             
             
             # Find device definition
@@ -241,27 +325,44 @@ class EagleSchematic(EagleFile):
                 print "Device:", device
             
             
-            device_set = part.get("deviceset")
-            print "Device set:", device_set
+            deviceset_name = part.get("deviceset")
+            print "Device set:", deviceset_name
             
-            devices = library.find("devicesets/deviceset/[@name='"+device_set+"']").find("devices")
+            deviceset = library.find("devicesets/deviceset/[@name='"+deviceset_name+"']")
+            devices = library.find("devicesets/deviceset/[@name='"+deviceset_name+"']").find("devices")
             device_def = devices.find("device/[@name='"+ device + "']")
             
             
             # find a package...
             package = device_def.get("package")
-            
-            
-            
             attrib["package"] = package
             
+            # find pinrefs
+            #pinrefs = self.getSheets().findall("./sheet/nets/net/segment/pinref/[@part='" + name + "']")
+            #print "Got pinrefs:", pinrefs
             
+            # find gate pins
+            #for pinref in pinrefs:
+            #    pin_name = pinref.get("pin")
             
             #attrib["value"] = None
             attrib["x"] = "0"
             attrib["y"] = "0"
-            attrib["smashed"] = "yes"
             attrib["rot"] = "R0"
+            
+            # this is default for the value field
+            value = deviceset_name+device
+            
+            # this is a flag to see if the user can specify a value
+            uservalue = deviceset.get("uservalue")
+            
+            print "User value:", uservalue
+            if uservalue == "yes":
+                value = part.get("value")
+                if value is not None:
+                    attrib["value"] = value
+            else:
+                attrib["value"] = value
             
             print "Got:", attrib
                 
@@ -270,6 +371,60 @@ class EagleSchematic(EagleFile):
             
             new_element = ET.SubElement(elements, "element", attrib)
             print
+            
+            
+        # now to do connections
+        print 
+        print "Now on to connections."
+        raw_nets = self.getSheets().findall("./sheet/nets/net")
+        
+        class Net (object):
+            def __init__ (self, name=None):
+                self.name = name
+                self.pinrefs = []
+                self.contactrefs = []
+            
+            def valid (self):
+                return True # This is just for sch consistancy
+                #return len(self.contactrefs) > 1
+                
+        nets = {}
+        
+        for net in raw_nets:
+            name = net.get("name")
+            
+            #print "Raw net:", name
+            
+            if nets.get(name, None) is None:
+                nets[name] = Net(name)
+                
+            #print "\tWith", len(net.findall("segment/pinref"))    
+                
+            nets[name].pinrefs += net.findall("segment/pinref")
+            
+            #print "\tTotal for processed net:", len(nets[name].pinrefs)
+
+        for net in nets.values():
+            name = net.name
+            print "Processing:", name
+            
+            # get contact refs from pin refs
+            for pinref in net.pinrefs:
+                part_name = pinref.get("part")
+                gate = pinref.get("gate")
+                pin = pinref.get("pin")
+                pad = self.gatePinToPad(part=part_name, gate=gate, pin=pin)
+                if pad is None:
+                    continue
+                
+                net.contactrefs.append(ET.Element("contactref", element=part_name, pad=pad))
+                
+            print "For signal:", net.name, "got:", net.contactrefs
+            
+            if net.valid():
+                signal = ET.Element("signal", name=net.name)
+                signal.extend(net.contactrefs)
+                board.getSignals().append(signal)
         
         return board
         
