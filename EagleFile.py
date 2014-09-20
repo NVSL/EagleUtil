@@ -12,6 +12,7 @@ class EagleFile:
 
     def initFields(self, parts, element):
         for i in parts:
+
             setattr(self, "_" + i, element.find(i))
 #            print "_" + i + " is " + str(getattr(self, "_" + i)) 
             if getattr(self, "_" + i) is None:
