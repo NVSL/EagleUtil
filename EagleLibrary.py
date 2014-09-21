@@ -111,6 +111,7 @@ class EagleLibrary(EagleFile):
 def findPackageOfVariantInLibraries(libraries, lib, device, variant):
     l = libraries.find("library[@name='" + lib +"']")
     s = l.find("devicesets/deviceset[@name='" + device +"']")
+#    print libraries, lib, device, variant
     return s.find("devices/device[@name='" + variant + "']").get("package")
 
 def findTechnologyByNameInDeviceSetInLibraries(libraries, lib, device, variant,tech):
