@@ -25,5 +25,9 @@ class EagleBoard(EagleFile):
         for e in self.getElements():
             i = self.getLibraries().find("library[@name='" + e.get("library") + "']").find("packages/package[@name='" + e.get("package") + "']") 
             e.append(copy.deepcopy(i))
+            
+    def addLibrariesFromSch (self, sch):
+        libs = self.getLibraries()
+        libs.extend(copy.deepcopy(sch.getLibraries().findall("*")))
 
 EagleFile.addAccessors(EagleBoard, EagleBoard._boardParts)

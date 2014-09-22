@@ -25,6 +25,19 @@ class EagleSchematic(EagleFile):
 
     def getSchematic(self):
         return self._schematic
+        
+    def getPartRefs (self):
+        parts = self.getParts()
+        refs = []
+        
+        parts = parts.findall("part")
+        print "Parts:", parts
+        
+        for part in parts:
+            refs.append(part.get("name"))
+            
+        print refs
+        return refs
 
     def get1stSheet(self):
         return EagleSchematicSheet(self.getSheets().find("sheet"))
@@ -93,7 +106,15 @@ class EagleSchematic(EagleFile):
         
         for net in nets:
             names.append(net.get("name"))
-            
+                    
+        return names
+    
+    def getPartNames (self):
+        parts = self.getParts()
+        names = []
+        
+        for part in parts:
+            names.append(part.get("name"))
         return names
         
     def renameNet (self, oldName, newName):
@@ -204,15 +225,18 @@ class EagleSchematic(EagleFile):
         if (deviceset is None) or (deviceset == ""): return None
         if (device is None) or (device == ""): return None
         
-        #for l in self.getLibraries().findall("library"):
-            #print l.get("name")
+        #print "Libraries available:"
+        #print "libs:"
+        #ET.dump(self.getLibraries())
+        #for l in self.getLibraries().findall("*"):
+        #    print l.get("name")
             
-        #print "Want:", lib
+        #print "Looking for library:", lib
         #print "xpath:", "library/[@name='"+lib+"']"
         lib = self.getLibraries().find("library/[@name='"+lib+"']")
         #print "Got:", lib
         
-        #print "Want:", deviceset
+        #print "Looking for deviceset:", deviceset
         deviceset = lib.find("devicesets/deviceset/[@name='"+deviceset+"']")
         #print "Got:", deviceset
         
@@ -238,7 +262,7 @@ class EagleSchematic(EagleFile):
         # initialize with template
         board = EagleBoard.EagleBoard(template_filename)
         
-
+        
             
         # now we can add the components, known as elements, to the brd file
         elements = board.getElements()
@@ -247,42 +271,48 @@ class EagleSchematic(EagleFile):
         parts = parts.findall("*")
         
         
+        
         #load libraries
-        print
-        print "Loading libraries."
-        needed_libraries = []
-        needed_device_sets = {}
+        using_extern_libs = False
+        if using_extern_libs:
+            print
+            print "Loading libraries."
+            needed_libraries = []
+            needed_device_sets = {}
         
-        for part in parts:
-            name = part.get("library")
-            needed_libraries.append(name)
+            for part in parts:
+                name = part.get("library")
+                needed_libraries.append(name)
             
-            if needed_device_sets.get(name,None) == None:
-                needed_device_sets[name] = []
+                if needed_device_sets.get(name,None) == None:
+                    needed_device_sets[name] = []
             
-            needed_device_sets[name].append(part.get("deviceset"))
+                needed_device_sets[name].append(part.get("deviceset"))
         
-        # bring in libraries from external libraries, every thing we need is not in the sch file :(
-        for library_file in libraries:
-            lbr = EagleLibrary.EagleLibrary(library_file)
-            name = library_file.split("/")[-1].replace(".lbr","")
+            # bring in libraries from external libraries, every thing we need is not in the sch file :(
+            for library_file in libraries:
+                lbr = EagleLibrary.EagleLibrary(library_file)
+                name = library_file.split("/")[-1].replace(".lbr","")
             
-            print "Processing library:", name
+                print "Processing library:", name
             
-            if name not in needed_libraries:
-                continue
+                if name not in needed_libraries:
+                    continue
             
-            #print "Needed device sets:", needed_device_sets[name]
+                #print "Needed device sets:", needed_device_sets[name]
                 
-            lbr.getLibrary().set("name", name)
+                lbr.getLibrary().set("name", name)
             
-            for deviceset in lbr.getLibrary().findall("./devicesets/deviceset"):
-                #print "Checking device set:", deviceset.get("name")
-                if deviceset.get("name") not in needed_device_sets[name]:
-                    #print "Removing device set:", deviceset.get("name")
-                    lbr._root.find("./drawing/library/devicesets").remove(deviceset)
+                for deviceset in lbr.getLibrary().findall("./devicesets/deviceset"):
+                    #print "Checking device set:", deviceset.get("name")
+                    if deviceset.get("name") not in needed_device_sets[name]:
+                        #print "Removing device set:", deviceset.get("name")
+                        lbr._root.find("./drawing/library/devicesets").remove(deviceset)
                     
-            board.getLibraries().append(copy.deepcopy(lbr.getLibrary()))
+                board.getLibraries().append(copy.deepcopy(lbr.getLibrary()))
+        else:
+            board.addLibrariesFromSch(self)
+            #ET.dump(board.getLibraries())
         
         
         pin_mapping = {}
@@ -393,8 +423,6 @@ class EagleSchematic(EagleFile):
         for net in raw_nets:
             name = net.get("name")
             
-            #print "Raw net:", name
-            
             if nets.get(name, None) is None:
                 nets[name] = Net(name)
                 
@@ -419,12 +447,14 @@ class EagleSchematic(EagleFile):
                 
                 net.contactrefs.append(ET.Element("contactref", element=part_name, pad=pad))
                 
-            print "For signal:", net.name, "got:", net.contactrefs
+            #print "For signal:", net.name, "got:", net.contactrefs
             
             if net.valid():
                 signal = ET.Element("signal", name=net.name)
                 signal.extend(net.contactrefs)
                 board.getSignals().append(signal)
+        
+        print "Finished board conversion."
         
         return board
         
