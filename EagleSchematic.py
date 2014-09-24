@@ -219,17 +219,20 @@ class EagleSchematic(EagleFile):
         
         lib = part.get("library")
         deviceset = part.get("deviceset")
+        if (deviceset is None): return None
+        
         device = part.get("device")
+        if (device is None): return None
         
         # check for dummy part, like ground symbol
-        if (deviceset is None) or (deviceset == ""): return None
-        if (device is None) or (device == ""): return None
+        
+        
         
         #print "Libraries available:"
         #print "libs:"
         #ET.dump(self.getLibraries())
         #for l in self.getLibraries().findall("*"):
-        #    print l.get("name")
+            #print l.get("name")
             
         #print "Looking for library:", lib
         #print "xpath:", "library/[@name='"+lib+"']"
@@ -247,7 +250,7 @@ class EagleSchematic(EagleFile):
         #ET.dump(device)
         
         connect = device.find("connects/connect/[@gate='"+gate+"'][@pin='"+pin+"']")
-        
+        if connect is None: return None
         #ET.dump(connect)
         
         pad = connect.get("pad")
@@ -255,6 +258,31 @@ class EagleSchematic(EagleFile):
         #print "Pad:", pad
         
         return pad
+        
+    def getPackage (self, library, deviceset, device):
+        print "Getting package."
+        
+        libraries = self.getLibraries()
+        library = libraries.find("./library/[@name='"+library+"']")
+        print "Library:", library
+        if library is None: return None
+        
+        
+        deviceset = library.find("./devicesets/deviceset/[@name='"+deviceset+"']")
+        print "Deviceset:", deviceset
+        if deviceset is None: return None
+        
+        device = deviceset.find("./devices/device/[@name='"+device+"']")
+        print "Device:", device
+        if device is None: return None
+        
+        package_name = device.get("package")
+        print "Package name:", package_name
+        if package_name is None: return None
+        
+        package = library.find("./packages/package/[@name='"+package_name+"']")
+        print "Package:", package
+        return package
                 
     def toBoard (self, libraries, template_filename):
         print
@@ -344,15 +372,16 @@ class EagleSchematic(EagleFile):
             
             
             # Find device definition
-            device = part.get("device")
+            device_name = part.get("device")
+            package = self.getPackage(library=part.get("library"), deviceset=part.get("deviceset"), device=device_name)
             
             # check if device is defined. If it isn't then it is just a dummy symbol like a ground symbol.
-            if (device is None) or (device == ""):
+            if (device_name is None) or (package is None):
                 print "No device for part. Ignoring."
                 print
                 continue
             else:
-                print "Device:", device
+                print "Device:", device_name
             
             
             deviceset_name = part.get("deviceset")
@@ -360,7 +389,7 @@ class EagleSchematic(EagleFile):
             
             deviceset = library.find("devicesets/deviceset/[@name='"+deviceset_name+"']")
             devices = library.find("devicesets/deviceset/[@name='"+deviceset_name+"']").find("devices")
-            device_def = devices.find("device/[@name='"+ device + "']")
+            device_def = devices.find("device/[@name='"+ device_name + "']")
             
             
             # find a package...
@@ -381,7 +410,7 @@ class EagleSchematic(EagleFile):
             attrib["rot"] = "R0"
             
             # this is default for the value field
-            value = deviceset_name+device
+            value = deviceset_name+device_name
             
             # this is a flag to see if the user can specify a value
             uservalue = deviceset.get("uservalue")
@@ -422,6 +451,7 @@ class EagleSchematic(EagleFile):
         
         for net in raw_nets:
             name = net.get("name")
+            print "Got schematic net:", name
             
             if nets.get(name, None) is None:
                 nets[name] = Net(name)
@@ -429,6 +459,9 @@ class EagleSchematic(EagleFile):
             #print "\tWith", len(net.findall("segment/pinref"))    
                 
             nets[name].pinrefs += net.findall("segment/pinref")
+            
+            for pinref in nets[name].pinrefs:
+                print "for:", pinref.get("part")
             
             #print "\tTotal for processed net:", len(nets[name].pinrefs)
 
@@ -442,6 +475,9 @@ class EagleSchematic(EagleFile):
                 gate = pinref.get("gate")
                 pin = pinref.get("pin")
                 pad = self.gatePinToPad(part=part_name, gate=gate, pin=pin)
+                
+                print "\tpinref:", part_name, gate, pin, pad
+                
                 if pad is None:
                     continue
                 
@@ -455,6 +491,7 @@ class EagleSchematic(EagleFile):
                 board.getSignals().append(signal)
         
         print "Finished board conversion."
+        print
         
         return board
         
