@@ -391,6 +391,8 @@ class EagleSchematic(EagleFile):
             devices = library.find("devicesets/deviceset/[@name='"+deviceset_name+"']").find("devices")
             device_def = devices.find("device/[@name='"+ device_name + "']")
             
+            tech_attributes = device_def.findall("./technologies/technology/attribute")
+            
             
             # find a package...
             package = device_def.get("package")
@@ -410,7 +412,9 @@ class EagleSchematic(EagleFile):
             attrib["rot"] = "R0"
             
             # this is default for the value field
-            value = deviceset_name+device_name
+            value = part.get("value")
+            if value is None:
+                value = deviceset_name+device_name
             
             # this is a flag to see if the user can specify a value
             uservalue = deviceset.get("uservalue")
@@ -426,9 +430,22 @@ class EagleSchematic(EagleFile):
             print "Got:", attrib
                 
             
-            
-            
             new_element = ET.SubElement(elements, "element", attrib)
+            
+            for attribute in tech_attributes:
+                new_attrib = copy.deepcopy(attribute)
+                new_attrib.set("x", new_element.get("x"))
+                new_attrib.set("y", new_element.get("y"))
+                new_attrib.set("display", "off")
+                new_attrib.set("layer", "27")
+                new_attrib.set("size", "1.778")
+                try:
+                    new_attrib.attrib.pop("constant")
+                except:
+                    pass
+                    
+                new_element.append(new_attrib)
+            
             print
             
             
