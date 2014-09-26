@@ -101,8 +101,12 @@ class EagleSchematic(EagleFile):
             net.set("name", net.get("name") + postfix)    
     
     def getNetNames (self):
+        #print "EagleSchematic: getNetNames()"
         nets = self.getRoot().findall(".//schematic/sheets/sheet/nets/net")
         names = []
+        
+        #ET.dump(self.getRoot().find(".//schematic/sheets/sheet/nets"))
+        #print nets
         
         for net in nets:
             names.append(net.get("name"))
