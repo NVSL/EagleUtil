@@ -152,6 +152,32 @@ class EagleSchematic(EagleFile):
         assert( isinstance(other, EagleSchematic) )
         EagleSchematic.combineLibraries(self._root, other._root)
         
+    def combine_duplicate_nets (self):
+        #print "Combining duplicate nets."
+        sheets = self.getSheets()
+        sheets = sheets.findall("sheet")
+        
+        for sheet in sheets:
+            #print "New sheet:"
+            nets = sheet.findall("nets/net")
+            net_map = {}
+            for net in nets:
+                name = net.get("name")
+                #print "Net:", name
+                #print "Map:    ", net_map.keys()
+                
+                if name not in net_map:
+                    net_map[name] = net
+                    #print "New map:", net_map.keys()
+                else:
+                    #print "Found dupe:", name
+                    #ET.dump(sheet.find("nets"))
+                    segments = net.findall("segment")
+                    if segments is not None:
+                        if len(segments) > 0:
+                            net_map[name].extend(segments)
+                    sheet.find("nets").remove(net)
+        
     @staticmethod
     def combineLibraries (dest, src):
     	srcLibs = src.findall("./drawing/schematic/libraries/library")
