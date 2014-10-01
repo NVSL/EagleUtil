@@ -1,6 +1,7 @@
 from lxml import etree as ET;
 #from lxml import etree as ET;
 import sys
+import os
 import XMLUtil
 
 from EagleError import *
@@ -30,8 +31,10 @@ class EagleFile:
             setattr(c, "get" + t, a)
 
     def __init__(self, f):
-        self._et = None;
-        self._root = None;
+        self._et = None
+        self._root = None
+        if not os.path.isfile(f):
+            raise EagleError("Eagle file '{0}' does not exist".format(f))
         self._et = ET.parse(f)
         self._root = self._et.getroot()                
         self._drawing = self._root.find("drawing")
