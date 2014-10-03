@@ -247,12 +247,12 @@ class EagleSchematic(EagleFile):
         #ET.dump(part)
         
         
-        lib = part.get("library")
-        deviceset = part.get("deviceset")
-        if (deviceset is None): return None
+        lib_name = part.get("library")
+        deviceset_name = part.get("deviceset")
+        if (deviceset_name is None): return None
         
-        device = part.get("device")
-        if (device is None): return None
+        device_name = part.get("device")
+        if (device_name is None): return None
         
         # check for dummy part, like ground symbol
         
@@ -266,18 +266,22 @@ class EagleSchematic(EagleFile):
             
         #print "Looking for library:", lib
         #print "xpath:", "library/[@name='"+lib+"']"
-        lib = self.getLibraries().find("library/[@name='"+lib+"']")
+        lib = self.getLibraries().find("library/[@name='"+lib_name+"']")
         #print "Got:", lib
         
         #print "Looking for deviceset:", deviceset
-        deviceset = lib.find("devicesets/deviceset/[@name='"+deviceset+"']")
+        deviceset = lib.find("devicesets/deviceset/[@name='"+deviceset_name+"']")
         #print "Got:", deviceset
         
         #print "Want:", device
-        device = deviceset.find("devices/device/[@name='"+device+"']")
+        device = deviceset.find("devices/device/[@name='"+device_name+"']")
         #print "Got:", device
         
         #ET.dump(device)
+        if device is None:
+            device = deviceset.find("devices/device/[@name='"+device_name.upper()+"']")
+            
+        assert device is not None, "Could not find device: "+device_name+" in library: "+lib_name+" in deviceset:"+deviceset_name
         
         connect = device.find("connects/connect/[@gate='"+gate+"'][@pin='"+pin+"']")
         if connect is None: return None
@@ -404,6 +408,10 @@ class EagleSchematic(EagleFile):
             # Find device definition
             device_name = part.get("device")
             package = self.getPackage(library=part.get("library"), deviceset=part.get("deviceset"), device=device_name)
+            
+            if (package is None) and (device_name is not None):
+                device_name = device_name.upper()
+                package = self.getPackage(library=part.get("library"), deviceset=part.get("deviceset"), device=device_name)
             
             # check if device is defined. If it isn't then it is just a dummy symbol like a ground symbol.
             if (device_name is None) or (package is None):
