@@ -8,8 +8,9 @@ class EagleLibrary(EagleFile):
 
     _libraryParts =[ "packages", "symbols", "devicesets"]
 
-    def __init__(self, f):
+    def __init__(self, f, name=None):
         self._library = None
+        self.name = name
         EagleFile.__init__(self, f)
         self._library = self.getDrawing().find("library")
         self.initFields(self._libraryParts, self._library)

@@ -180,8 +180,15 @@ class EagleSchematic(EagleFile):
         
     @staticmethod
     def combineLibraries (dest, src):
+        print
+        print "Combining libraries..."
+        
     	srcLibs = src.findall("./drawing/schematic/libraries/library")
     	destLibs = dest.findall("./drawing/schematic/libraries/library")
+        
+        print "src:", [lib.get("name") for lib in srcLibs]
+        print "dest:", [lib.get("name") for lib in destLibs]
+        
 
     	destLibNames = []
 
@@ -193,7 +200,6 @@ class EagleSchematic(EagleFile):
     			dest.find('./drawing/schematic/libraries').append(lib)
 
     	#then match up all lib pairs with the same name and combine
-
     	for dLib in destLibs:
     		for sLib in srcLibs:
     			if dLib.attrib['name'] == sLib.attrib['name']:
@@ -241,43 +247,48 @@ class EagleSchematic(EagleFile):
     									dDeviceset.append(device)
                                         
     def gatePinToPad (self, part, gate, pin):
-        #print
-        #print "Mapping pin to pad."
+        debug = False
+        
+        if debug: print
+        if debug: print "Mapping pin to pad."
         part = self.getParts().find("part/[@name='"+part+"']")
-        #ET.dump(part)
+        if debug: ET.dump(part)
         
         
         lib_name = part.get("library")
         deviceset_name = part.get("deviceset")
-        if (deviceset_name is None): return None
+        if debug: 
+            if (deviceset_name is None): return None
         
         device_name = part.get("device")
-        if (device_name is None): return None
+        if debug: 
+            if (device_name is None): return None
         
         # check for dummy part, like ground symbol
         
         
         
-        #print "Libraries available:"
-        #print "libs:"
-        #ET.dump(self.getLibraries())
-        #for l in self.getLibraries().findall("*"):
-            #print l.get("name")
+        if debug: print "Libraries available:"
+        if debug: print "libs:"
+        if debug: ET.dump(self.getLibraries())
+        if debug: 
+            for l in self.getLibraries().findall("*"):
+                print l.get("name")
             
-        #print "Looking for library:", lib
-        #print "xpath:", "library/[@name='"+lib+"']"
+        if debug: print "Looking for library:", lib_name
+        if debug: print "xpath:", "library/[@name='"+lib_name+"']"
         lib = self.getLibraries().find("library/[@name='"+lib_name+"']")
-        #print "Got:", lib
+        if debug: print "Got:", lib
         
-        #print "Looking for deviceset:", deviceset
+        if debug: print "Looking for deviceset:", deviceset_name
         deviceset = lib.find("devicesets/deviceset/[@name='"+deviceset_name+"']")
-        #print "Got:", deviceset
+        if debug: print "Got:", deviceset
         
-        #print "Want:", device
+        if debug: print "Want:", device_name
         device = deviceset.find("devices/device/[@name='"+device_name+"']")
-        #print "Got:", device
+        if debug: print "Got:", device
         
-        #ET.dump(device)
+        if debug: ET.dump(device)
         if device is None:
             device = deviceset.find("devices/device/[@name='"+device_name.upper()+"']")
             
@@ -285,11 +296,11 @@ class EagleSchematic(EagleFile):
         
         connect = device.find("connects/connect/[@gate='"+gate+"'][@pin='"+pin+"']")
         if connect is None: return None
-        #ET.dump(connect)
+        if debug: ET.dump(connect)
         
         pad = connect.get("pad")
         
-        #print "Pad:", pad
+        if debug: print "Pad:", pad
         
         return pad
         
@@ -319,6 +330,8 @@ class EagleSchematic(EagleFile):
         return package
                 
     def toBoard (self, libraries, template_filename):
+        assert len(libraries) > 0, "No libraries to use in conversion!"
+        assert len(self.getLibraries().findall("library")) > 0, "There are no libraries in this schematic. Something is wrong!"
         print
         print "Converting schematic to board."
         # initialize with template
@@ -333,48 +346,19 @@ class EagleSchematic(EagleFile):
         parts = parts.findall("*")
         
         
+        assert len(self.getLibraries().findall("library")) > 0, "There are no libraries in this schematic. Something is wrong!"
         
-        #load libraries
-        using_extern_libs = False
-        if using_extern_libs:
-            print
-            print "Loading libraries."
-            needed_libraries = []
-            needed_device_sets = {}
+        board.remove_all_libraries()
         
-            for part in parts:
-                name = part.get("library")
-                needed_libraries.append(name)
-            
-                if needed_device_sets.get(name,None) == None:
-                    needed_device_sets[name] = []
-            
-                needed_device_sets[name].append(part.get("deviceset"))
+        assert len(self.getLibraries().findall("library")) > 0, "There are no libraries in this schematic. Something is wrong!"
         
-            # bring in libraries from external libraries, every thing we need is not in the sch file :(
-            for library_file in libraries:
-                lbr = EagleLibrary.EagleLibrary(library_file)
-                name = library_file.split("/")[-1].replace(".lbr","")
+        for library in libraries:
+            board.add_library(copy.deepcopy(library))
             
-                print "Processing library:", name
+        assert len(self.getLibraries().findall("library")) > 0, "There are no libraries in this schematic. Something is wrong!"    
             
-                if name not in needed_libraries:
-                    continue
-            
-                #print "Needed device sets:", needed_device_sets[name]
-                
-                lbr.getLibrary().set("name", name)
-            
-                for deviceset in lbr.getLibrary().findall("./devicesets/deviceset"):
-                    #print "Checking device set:", deviceset.get("name")
-                    if deviceset.get("name") not in needed_device_sets[name]:
-                        #print "Removing device set:", deviceset.get("name")
-                        lbr._root.find("./drawing/library/devicesets").remove(deviceset)
-                    
-                board.getLibraries().append(copy.deepcopy(lbr.getLibrary()))
-        else:
-            board.addLibrariesFromSch(self)
-            #ET.dump(board.getLibraries())
+        print "Libraries to add:", libraries
+        print "Board libraries:", [library.get("name") for library in board.getLibraries().findall("library")]
         
         
         pin_mapping = {}
@@ -398,6 +382,7 @@ class EagleSchematic(EagleFile):
             # get lib from board
             board_libraries = board.getLibraries()
             library = board_libraries.find("./library/[@name='" + attrib["library"] + "']")
+            assert library is not None, "Could not find library with name: "+attrib["library"]+" available libraries are: "+str([library.get("name") for library in board.getLibraries().findall("library")])
             
             # get lib from sch
             sch_libraries = self.getLibraries()

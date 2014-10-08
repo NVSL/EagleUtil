@@ -3,10 +3,11 @@ from lxml import etree as ET;
 import sys
 import os
 import XMLUtil
+import copy
 
 from EagleError import *
 
-class EagleFile:
+class EagleFile(object):
 
     _parts = ["layers", "settings", "grid"]
     _drawing = None
@@ -53,6 +54,39 @@ class EagleFile:
     
     def getRoot(self):
         return self._root
+        
+    def remove_all_libraries (self):
+        for lib in self.getLibraries().findall("library"):
+            self.getLibraries().remove(lib)
+            
+    def add_library (self, library):
+        import EagleLibrary
+        print library
+        assert type(library) == EagleLibrary.EagleLibrary, "Can only add libraries to a schematic if they are EagleLibrary type. Got: "+type(library).__name__
+        assert library.name is not None, "EagleLibrary must have a name attribute if you are adding it to a schematic."
+        assert library.name not in [lib.get("name") for lib in self.getLibraries().findall("library")], "Cannot add library with duplicat name: " + library.name
+        
+        new_lib = library.getLibrary()
+        new_lib.set("name", library.name)
+        
+        new_lib_layers = library.getLayers().findall("layer")
+        new_lib_layer_numbers = {layer.get("number"): layer for layer in new_lib_layers}
+        old_layer_numbers = {layer.get("number"): layer for layer in self.getLayers().findall("layer")}
+        
+        #print "Old Layers:", old_layer_numbers
+        #print "New Layers:", new_lib_layer_numbers
+        
+        for number in new_lib_layer_numbers.keys():
+            if number not in old_layer_numbers:
+                self.getLayers().append(copy.deepcopy(new_lib_layer_numbers[number]))
+                print number, new_lib_layer_numbers[number].get("name")
+                assert self.getLayers().find("./layer[@number='"+number+"']") is not None
+                if number == "99":
+                    print self.getLayers().find("./layer[@number='"+number+"']")
+                    #exit(-1)
+                    
+        
+        self.getLibraries().append(new_lib)
 
     def write(self, f):
         XMLUtil.formatAndWrite(self._et, f)
