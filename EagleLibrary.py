@@ -107,7 +107,9 @@ class EagleLibrary(EagleFile):
         if incumbant is not None:
             container.remove(incumbant)
         container.append(copy.deepcopy(element))
-
+    
+    
+        
     
 def findPackageOfVariantInLibraries(libraries, lib, device, variant):
     l = libraries.find("library[@name='" + lib +"']")
