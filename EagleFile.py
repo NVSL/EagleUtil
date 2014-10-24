@@ -88,7 +88,30 @@ class EagleFile(object):
         
         self.getLibraries().append(new_lib)
 
+    def indent(self,elem, level=0):
+        i = "\n"
+        if len(elem):
+            if not elem.text or not elem.text.strip():
+                elem.text = i
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+            for elem in elem:
+                self.indent(elem, level+1)
+            if not elem.tail or not elem.tail.strip():
+                elem.tail = i
+        else:
+            if level and (not elem.tail or not elem.tail.strip()):
+                elem.tail = i
+
+#    def formatAndWrite(tree, file, encoding="us-ascii", xml_declaration=None, method="xml"):
+
     def write(self, f):
+        # self.indent(self._et.getroot());
+        # f = open(f, 'w')
+        # f.write("""<?xml version="1.0"?>""")
+        # f.write(ET.tostring(self._et))
+
+#        self._et.write(f)
         XMLUtil.formatAndWrite(self._et, f)
         
 

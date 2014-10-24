@@ -93,7 +93,7 @@ if __name__ == "__main__":
        
         device = ET.SubElement(devset.find("devices"), 
                                "device",
-                               name=j.find("format").text % j.attrib,
+                               name=(j.find("format").text % j.attrib).upper(),
                                package=j.find("package").text.upper())
         connects = ET.SubElement(device,
                                  "connects");
@@ -111,7 +111,7 @@ if __name__ == "__main__":
         for a in j.attrib:
             ET.SubElement(tech,
                           "attribute",
-                          name=a,
+                          name=a.upper(),
                           value=j.attrib[a])
 
 lbrIn.write(args.lbrout[0])                               
