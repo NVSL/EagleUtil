@@ -304,6 +304,14 @@ class EagleSchematic(EagleFile):
         
         return pad
         
+    def getPackageFromPartName (self, part_name):
+        part = self.getPart(part_name)
+        device = part.get("device")
+        deviceset = part.get("deviceset")
+        library = part.get("library")
+        
+        return self.getPackage(library, deviceset, device)
+        
     def getPackage (self, library, deviceset, device):
         print "Getting package."
         
@@ -328,6 +336,14 @@ class EagleSchematic(EagleFile):
         package = library.find("./packages/package/[@name='"+package_name+"']")
         print "Package:", package
         return package
+		
+    def getPart (self, part_name):
+        parts = self.getParts()
+        parts = parts.findall("./*")
+        parts = [part for part in parts if part.get("name") == part_name]
+        assert len(parts) == 1, "More than one part with the same name."
+        return parts[0]
+		
                 
     def toBoard (self, libraries, template_filename):
         assert len(libraries) > 0, "No libraries to use in conversion!"
