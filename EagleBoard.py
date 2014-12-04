@@ -21,9 +21,13 @@ class EagleBoard(EagleFile):
     def getLibraryContainer(self):
         return self.getLibraries()
 
+    #Return the package information belonging to an <element>
+    def getPackage(self, e):
+        return self.getLibraries().find("library[@name='" + e.get("library") + "']").find("packages/package[@name='" + e.get("package") + "']")
+
     def instantiatePackages(self):
         for e in self.getElements():
-            i = self.getLibraries().find("library[@name='" + e.get("library") + "']").find("packages/package[@name='" + e.get("package") + "']") 
+            i = self.getPackage(e)
             e.append(copy.deepcopy(i))
             
     def addLibrariesFromSch (self, sch):
