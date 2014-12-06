@@ -12,6 +12,7 @@ class EagleBoard(EagleFile):
     def __init__(self, f):
         self._board = None
         EagleFile.__init__(self, f)
+        self.file_name = f
         self._board = self.getET().find("./drawing/board")
         self.initFields(self._boardParts, self._board)
 
