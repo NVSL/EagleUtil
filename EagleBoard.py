@@ -18,6 +18,10 @@ class EagleBoard(EagleFile):
 
     def getBoard(self):
         return self._board
+
+    #Return a single <element> given its name
+    def getElement(self,name):
+        return self.getElements().find("element[@name='" + name + "']")
     
     def getLibraryContainer(self):
         return self.getLibraries()
