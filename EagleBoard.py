@@ -30,6 +30,10 @@ class EagleBoard(EagleFile):
     def getPackage(self, e):
         return self.getLibraries().find("library[@name='" + e.get("library") + "']").find("packages/package[@name='" + e.get("package") + "']")
 
+    #Get the package that goes with a specific <element> name
+    def getPackageForElement(self, name):
+        return self.getPackage(self.getElement(name))
+
     def instantiatePackages(self):
         for e in self.getElements():
             i = self.getPackage(e)
