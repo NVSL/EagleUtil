@@ -65,7 +65,7 @@ class EagleFile(object):
         assert type(library) == EagleLibrary.EagleLibrary, "Can only add libraries to a schematic if they are EagleLibrary type. Got: "+type(library).__name__
         assert library.name is not None, "EagleLibrary must have a name attribute if you are adding it to a schematic."
         assert library.name not in [lib.get("name") for lib in self.getLibraries().findall("library")], "Cannot add library with duplicat name: " + library.name
-        
+
         new_lib = library.getLibrary()
         new_lib.set("name", library.name)
         
