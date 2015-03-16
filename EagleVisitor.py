@@ -90,8 +90,17 @@ class EagleVisitor:
             if post is None:
                 raise EagleError("Unknown tag: " + e.tag)
             post(root)
-        
 
+    def setup(self):
+        pass
+    def teardown(self):
+        pass
+    
+    def go(self,root):
+        self.setup()
+        self.visit(root)
+        self.teardown()
+        
 def _pre():
     return lambda self, element : self.default_pre(element)
 
