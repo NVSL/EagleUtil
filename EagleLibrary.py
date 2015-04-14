@@ -3,6 +3,7 @@ import sys
 from EagleError import *
 from EagleDevice import *
 from EagleFile import *
+import os.path
 
 class EagleLibrary(EagleFile):
 
@@ -10,7 +11,8 @@ class EagleLibrary(EagleFile):
 
     def __init__(self, f, name=None):
         self._library = None
-        self.name = name
+        if name is None:
+            self.name = os.path.split(f)[1].replace(".lbr","")
         EagleFile.__init__(self, f)
         self._library = self.getDrawing().find("library")
         self.initFields(self._libraryParts, self._library)

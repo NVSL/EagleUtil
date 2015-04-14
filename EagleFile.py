@@ -34,9 +34,14 @@ class EagleFile(object):
     def __init__(self, f):
         self._et = None
         self._root = None
-        if not os.path.isfile(f):
-            raise EagleError("Eagle file '{0}' does not exist".format(f))
-        self._et = ET.parse(f)
+        if type(f) == ET._Element:
+            self._et = ET.ElementTree()
+            self._et._setroot(f)
+        else:
+            if not os.path.isfile(f):
+                raise EagleError("Eagle file '{0}' does not exist".format(f))
+            self._et = ET.parse(f)
+                
         self._root = self._et.getroot()                
         self._drawing = self._root.find("drawing")
         self.initFields(self._parts, self._drawing)
