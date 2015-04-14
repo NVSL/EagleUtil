@@ -10,9 +10,15 @@ class EagleLibrary(EagleFile):
     _libraryParts =[ "packages", "symbols", "devicesets"]
 
     def __init__(self, f, name=None):
+        print "Making EagleLibrary with ("+f+", "+name+")"
+        
         self._library = None
         if name is None:
+            print "\tAuto-naming"
             self.name = os.path.split(f)[1].replace(".lbr","")
+        else:
+            self.name = name
+            
         EagleFile.__init__(self, f)
         self._library = self.getDrawing().find("library")
         self.initFields(self._libraryParts, self._library)
