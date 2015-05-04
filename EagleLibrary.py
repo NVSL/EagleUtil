@@ -10,7 +10,7 @@ class EagleLibrary(EagleFile):
     _libraryParts =[ "packages", "symbols", "devicesets"]
 
     def __init__(self, f, name=None):
-        print "Making EagleLibrary with ("+f+", "+name+")"
+        print "Making EagleLibrary with ("+f+", "+str(name)+")"
         
         self._library = None
         if name is None:
