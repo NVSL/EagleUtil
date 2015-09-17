@@ -10,6 +10,7 @@ class EagleLibrary(EagleFile):
     _libraryParts =[ "packages", "symbols", "devicesets"]
 
     def __init__(self, f, name=None):
+        assert isinstance(f, basestring)
         print "Making EagleLibrary with ("+f+", "+str(name)+")"
         
         self._library = None
