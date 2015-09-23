@@ -71,7 +71,7 @@ class EagleLayers:
     
     def ensureLayer(self, name, number, color=4, fill=1):
         if (name not in self._byName and num in self._byNum) or (name in self._byName and num not in self._byNum):
-            raise EagleError("Tried to creaat layer " + name + "@" + str(num) + ", but a layer of that name or number already exists.")
+            raise EagleError("Tried to create layer " + name + "@" + str(num) + ", but a layer of that name or number already exists.")
         
         if name not in self._byName and num not in self._byNum:
             ET.SubElement(self._root, "layer", {active:"yes",
