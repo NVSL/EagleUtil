@@ -68,7 +68,7 @@ class gcomVisitor(XMLVisitor.XMLVisitor):
         self.popVariant()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Generate a family of Eagle Devices")
     parser.add_argument("--db", required=True,  type=str, nargs=1, dest='db', help="Spec for device list to build")
     parser.add_argument("--lbrin", required=True,  type=str, nargs=1, dest='lbrin', help="Library containing the symbol and the package.")

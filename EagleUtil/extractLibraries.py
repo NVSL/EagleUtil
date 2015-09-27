@@ -14,7 +14,7 @@ from EagleSchematic import *
 import re
 import pipes
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Tool for moving symbols, packages, and devices betweens brd, sch, and lbr files.  For instance, to build a library from a brd and sch, do something like './extractLibraries.py --src foo.sch bar.brd --dst Empty.lbr'")
 
     parser.add_argument("--src", required=True,  type=str, nargs='+', dest='srcFile', help="source .brd, .sch, or .lbr file")

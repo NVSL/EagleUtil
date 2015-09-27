@@ -48,7 +48,7 @@ def isInteresting(e):
                      "signals",
                      "signal"]
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(description="Summarize the content of an eagle file")
     parser.add_argument("-f", required=True,  type=str, nargs=1, dest='libname', help="Eagle file")
     args = parser.parse_args()
