@@ -431,7 +431,7 @@ class EagleSchematic(EagleFile):
             device_def = devices.find("device/[@name='"+ device_name + "']")
             
             tech_attributes = device_def.findall("./technologies/technology/attribute")
-            
+            part_attributes = part.findall("attribute")
             
             # find a package...
             package = device_def.get("package")
@@ -471,7 +471,7 @@ class EagleSchematic(EagleFile):
             
             new_element = ET.SubElement(elements, "element", attrib)
             
-            for attribute in tech_attributes:
+            for attribute in tech_attributes + part_attributes:
                 new_attrib = copy.deepcopy(attribute)
                 new_attrib.set("x", new_element.get("x"))
                 new_attrib.set("y", new_element.get("y"))
