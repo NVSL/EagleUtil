@@ -2,7 +2,7 @@ from lxml import etree as ET;
 #from lxml import etree as ET;
 import sys
 import os
-import XMLUtil
+import gtron_util.XMLUtil as XMLUtil
 import copy
 
 from EagleError import *
