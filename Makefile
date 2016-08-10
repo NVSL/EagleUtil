@@ -2,9 +2,11 @@ default: build test
 
 .PHONY: build
 build:
-	python ./setup.py build develop;
+	pip install -e .
+
 .PHONY: test
 test:
 
 .PHONY: clean
 clean:
+	true
