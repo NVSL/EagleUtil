@@ -41,7 +41,7 @@ setup(name='EagleUtil',
       package_data={
           "" : ["*.rst"],
       },
-      install_requires=["lxml>=3.4.2"],
+      install_requires=["lxml", "svgwrite", ],
       entry_points={
           'console_scripts': [
             'devFamily = EagleTools.devFamily:main',
