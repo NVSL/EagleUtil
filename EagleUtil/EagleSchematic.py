@@ -6,6 +6,8 @@ from EagleFile import *
 import EagleBoard
 import EagleLibrary
 import unicodedata
+import logging
+log = logging.getLogger(__name__)
 
 class EagleSchematic(EagleFile):
     _schematic = None;
@@ -19,8 +21,7 @@ class EagleSchematic(EagleFile):
         try:
             self.initFields(self._schematicParts, self._schematic)
         except EagleError as e:
-            print "Trouble loading from " + f
-            print str(e)
+            log.error("Trouble loading from {}".format(f))
             raise e
 
     def getSchematic(self):
@@ -31,12 +32,12 @@ class EagleSchematic(EagleFile):
         refs = []
         
         parts = parts.findall("part")
-        print "Parts:", parts
+        log.debug("Parts:" + str( parts))
         
         for part in parts:
             refs.append(part.get("name"))
             
-        print refs
+        log.debug(refs)
         return refs
 
     def get1stSheet(self):
@@ -57,11 +58,7 @@ class EagleSchematic(EagleFile):
     def getSheet (self, index):
         return EagleSchematicSheet(self.getSheets().findall("sheet")[index])
         
-    def addPart(self, sheet, name, library, deviceset, device, value, gate, x, y):
-        parts = self.getParts()
-        ET.SubElement(self.getParts(), "part", name=name, library=library, deviceset=device, device=variant, value=value)
-        ET.SubElement(sheet.getInstances(), "instance", part=part, gate=gate, x=x, y=y)
-        
+
     def addSheets (self, other):
         """Adds all the sheets from another schematic."""
         self.addLibrariesFrom(other)
@@ -82,31 +79,31 @@ class EagleSchematic(EagleFile):
         
     def appendToPartNames (self, postfix):        
         for instance in self.getRoot().findall(".//sheets/sheet/instances/instance"):
-            #print "got instance:", instance.get("part")
+            #log.debug("got instance:", instance.get("part")
             instance.set("part", instance.get("part") + postfix)
-            #print "now instance:", instance.get("part")
+            #log.debug("now instance:", instance.get("part")
             
         for part in self.getRoot().findall(".//parts/part"):
-            #print "got part:", part.get("name")
+            #log.debug("got part:", part.get("name")
             part.set("name", part.get("name") + postfix)
-            #print "now part:", part.get("name")
+            #log.debug("now part:", part.get("name")
             
         for pinref in self.getRoot().findall(".//sheets/sheet/*/*/*/pinref"):
-            #print "got pinref:", pinref.get("part")
+            #log.debug("got pinref:", pinref.get("part")
             pinref.set("part", pinref.get("part") + postfix)
-            #print "now pinref:", pinref.get("part")
+            #log.debug("now pinref:", pinref.get("part")
             
     def appendToNetNames (self, postfix):
         for net in self.getRoot().findall(".//schematic/sheets/sheet/nets/net"):
             net.set("name", net.get("name") + postfix)    
     
     def getNetNames (self):
-        #print "EagleSchematic: getNetNames()"
+        #log.debug("EagleSchematic: getNetNames()"
         nets = self.getRoot().findall(".//schematic/sheets/sheet/nets/net")
         names = []
         
         #ET.dump(self.getRoot().find(".//schematic/sheets/sheet/nets"))
-        #print nets
+        #log.debug(nets
         
         for net in nets:
             names.append(net.get("name"))
@@ -153,24 +150,24 @@ class EagleSchematic(EagleFile):
         EagleSchematic.combineLibraries(self._root, other._root)
         
     def combine_duplicate_nets (self):
-        #print "Combining duplicate nets."
+        #log.debug("Combining duplicate nets."
         sheets = self.getSheets()
         sheets = sheets.findall("sheet")
         
         for sheet in sheets:
-            #print "New sheet:"
+            #log.debug("New sheet:"
             nets = sheet.findall("nets/net")
             net_map = {}
             for net in nets:
                 name = net.get("name")
-                #print "Net:", name
-                #print "Map:    ", net_map.keys()
+                #log.debug("Net:", name
+                #log.debug("Map:    ", net_map.keys()
                 
                 if name not in net_map:
                     net_map[name] = net
-                    #print "New map:", net_map.keys()
+                    #log.debug("New map:", net_map.keys()
                 else:
-                    #print "Found dupe:", name
+                    #log.debug("Found dupe:", name
                     #ET.dump(sheet.find("nets"))
                     segments = net.findall("segment")
                     if segments is not None:
@@ -180,14 +177,14 @@ class EagleSchematic(EagleFile):
         
     @staticmethod
     def combineLibraries (dest, src):
-        print
-        print "Combining libraries..."
+
+        log.debug("Combining libraries...")
         
     	srcLibs = src.findall("./drawing/schematic/libraries/library")
     	destLibs = dest.findall("./drawing/schematic/libraries/library")
         
-        print "src:", [lib.get("name") for lib in srcLibs]
-        print "dest:", [lib.get("name") for lib in destLibs]
+        log.debug("src: {}".format([lib.get("name") for lib in srcLibs]))
+        log.debug("dest: {}".format([lib.get("name") for lib in destLibs]))
         
 
     	destLibNames = []
@@ -249,46 +246,46 @@ class EagleSchematic(EagleFile):
     def gatePinToPad (self, part, gate, pin):
         debug = False
         
-        if debug: print
-        if debug: print "Mapping pin to pad."
+        log.debug("Mapping pin to pad.")
         part = self.getParts().find("part/[@name='"+part+"']")
-        if debug: ET.dump(part)
+        ET.dump(part)
         
         
         lib_name = part.get("library")
         deviceset_name = part.get("deviceset")
-        if debug: 
-            if (deviceset_name is None): return None
+
+        if (deviceset_name is None): return None
         
         device_name = part.get("device")
-        if debug: 
-            if (device_name is None): return None
+
+        if (device_name is None): return None
         
         # check for dummy part, like ground symbol
         
         
         
-        if debug: print "Libraries available:"
-        if debug: print "libs:"
-        if debug: ET.dump(self.getLibraries())
-        if debug: 
-            for l in self.getLibraries().findall("*"):
-                print l.get("name")
+        log.debug("Libraries available:")
+
+        log.debug("libs:")
+        #ET.dump(self.getLibraries())
+
+        for l in self.getLibraries().findall("*"):
+            log.debug(l.get("name"))
             
-        if debug: print "Looking for library:", lib_name
-        if debug: print "xpath:", "library/[@name='"+lib_name+"']"
+        log.debug("Looking for library:" +  lib_name)
+        log.debug("xpath:" + "library/[@name='"+lib_name+"']")
         lib = self.getLibraries().find("library/[@name='"+lib_name+"']")
-        if debug: print "Got:", lib
+        log.debug("Got:" +  lib)
         
-        if debug: print "Looking for deviceset:", deviceset_name
+        log.debug("Looking for deviceset:" +  deviceset_name)
         deviceset = lib.find("devicesets/deviceset/[@name='"+deviceset_name+"']")
-        if debug: print "Got:", deviceset
+        log.debug("Got:" + deviceset)
         
-        if debug: print "Want:", device_name
+        log.debug("Want:"+ device_name)
         device = deviceset.find("devices/device/[@name='"+device_name+"']")
-        if debug: print "Got:", device
+        log.debug("Got:" + device)
         
-        if debug: ET.dump(device)
+        ET.dump(device)
         if device is None:
             device = deviceset.find("devices/device/[@name='"+device_name.upper()+"']")
             
@@ -296,11 +293,11 @@ class EagleSchematic(EagleFile):
         
         connect = device.find("connects/connect/[@gate='"+gate+"'][@pin='"+pin+"']")
         if connect is None: return None
-        if debug: ET.dump(connect)
+        ET.dump(connect)
         
         pad = connect.get("pad")
         
-        if debug: print "Pad:", pad
+        log.debug("Pad:" +  pad)
         
         return pad
         
@@ -313,28 +310,28 @@ class EagleSchematic(EagleFile):
         return self.getPackage(library, deviceset, device)
         
     def getPackage (self, library, deviceset, device):
-        print "Getting package."
+        log.debug("Getting package.")
         
         libraries = self.getLibraries()
         library = libraries.find("./library/[@name='"+library+"']")
-        print "Library:", library
+        log.debug("Library:" + str(library))
         if library is None: return None
         
         
         deviceset = library.find("./devicesets/deviceset/[@name='"+deviceset+"']")
-        print "Deviceset:", deviceset
+        log.debug("Deviceset:" + str(deviceset))
         if deviceset is None: return None
         
         device = deviceset.find("./devices/device/[@name='"+device+"']")
-        print "Device:", device
+        log.debug("Device:" + str(device))
         if device is None: return None
         
         package_name = device.get("package")
-        print "Package name:", package_name
+        log.debug("Package name:"+ str(package_name))
         if package_name is None: return None
         
         package = library.find("./packages/package/[@name='"+package_name+"']")
-        print "Package:", package
+        log.debug("Package:"+ str(package))
         return package
 		
     def getPart (self, part_name):
@@ -348,8 +345,7 @@ class EagleSchematic(EagleFile):
     def toBoard (self, libraries, template_filename):
         assert len(libraries) > 0, "No libraries to use in conversion!"
         assert len(self.getLibraries().findall("library")) > 0, "There are no libraries in this schematic. Something is wrong!"
-        print
-        print "Converting schematic to board."
+        log.debug("Converting schematic to board.")
         # initialize with template
         board = EagleBoard.EagleBoard(template_filename)
         
@@ -373,14 +369,13 @@ class EagleSchematic(EagleFile):
             
         assert len(self.getLibraries().findall("library")) > 0, "There are no libraries in this schematic. Something is wrong!"    
             
-        print "Libraries to add:", libraries
-        print "Board libraries:", [library.get("name") for library in board.getLibraries().findall("library")]
+        log.debug("Libraries to add:" +str( libraries))
+        log.debug("Board libraries:" + str([library.get("name") for library in board.getLibraries().findall("library")]))
         
         
         pin_mapping = {}
         
-        print
-        print "Parts in schematic:"
+        log.debug("Parts in schematic:")
         for part in parts:
             attrib = {}
             name = part.get("name")
@@ -390,10 +385,10 @@ class EagleSchematic(EagleFile):
             
             attrib["library"] = part.get("library")
             
-            print "Processing part:", attrib["name"]
+            log.debug("Processing part:" + attrib["name"])
             
             # Find libraries
-            #print "Looking for library:", attrib["library"]
+            #log.debug("Looking for library:", attrib["library"]
             
             # get lib from board
             board_libraries = board.getLibraries()
@@ -403,7 +398,7 @@ class EagleSchematic(EagleFile):
             # get lib from sch
             sch_libraries = self.getLibraries()
             sch_library = sch_libraries.find("./library/[@name='" + attrib["library"] + "']")
-            #print "Found:", library
+            #log.debug("Found:", library
             
             
             # Find device definition
@@ -416,15 +411,15 @@ class EagleSchematic(EagleFile):
             
             # check if device is defined. If it isn't then it is just a dummy symbol like a ground symbol.
             if (device_name is None) or (package is None):
-                print "No device for part. Ignoring."
-                print
+                log.debug("No device for part. Ignoring.")
+
                 continue
             else:
-                print "Device:", device_name
+                log.debug("Device:" +  device_name)
             
             
             deviceset_name = part.get("deviceset")
-            print "Device set:", deviceset_name
+            log.debug("Device set:" +  deviceset_name)
             
             deviceset = library.find("devicesets/deviceset/[@name='"+deviceset_name+"']")
             devices = library.find("devicesets/deviceset/[@name='"+deviceset_name+"']").find("devices")
@@ -439,7 +434,7 @@ class EagleSchematic(EagleFile):
             
             # find pinrefs
             #pinrefs = self.getSheets().findall("./sheet/nets/net/segment/pinref/[@part='" + name + "']")
-            #print "Got pinrefs:", pinrefs
+            #log.debug("Got pinrefs:", pinrefs
             
             # find gate pins
             #for pinref in pinrefs:
@@ -458,7 +453,7 @@ class EagleSchematic(EagleFile):
             # this is a flag to see if the user can specify a value
             uservalue = deviceset.get("uservalue")
             
-            print "User value:", uservalue
+            log.debug("User value:" +  uservalue)
             if uservalue == "yes":
                 value = part.get("value")
                 if value is not None:
@@ -466,7 +461,7 @@ class EagleSchematic(EagleFile):
             else:
                 attrib["value"] = value
             
-            print "Got:", attrib
+            log.debug("Got:" +  attrib)
                 
             
             new_element = ET.SubElement(elements, "element", attrib)
@@ -485,12 +480,8 @@ class EagleSchematic(EagleFile):
                     
                 new_element.append(new_attrib)
             
-            print
-            
-            
-        # now to do connections
-        print 
-        print "Now on to connections."
+
+        log.debug("Now on to connections.")
         raw_nets = self.getSheets().findall("./sheet/nets/net")
         
         class Net (object):
@@ -507,23 +498,23 @@ class EagleSchematic(EagleFile):
         
         for net in raw_nets:
             name = net.get("name")
-            print "Got schematic net:", name
+            log.debug("Got schematic net:" +  name)
             
             if nets.get(name, None) is None:
                 nets[name] = Net(name)
                 
-            #print "\tWith", len(net.findall("segment/pinref"))    
+            #log.debug("\tWith", len(net.findall("segment/pinref"))
                 
             nets[name].pinrefs += net.findall("segment/pinref")
             
             for pinref in nets[name].pinrefs:
-                print "for:", pinref.get("part")
+                log.debug("for:", pinref.get("part"))
             
-            #print "\tTotal for processed net:", len(nets[name].pinrefs)
+            #log.debug("\tTotal for processed net:", len(nets[name].pinrefs)
 
         for net in nets.values():
             name = net.name
-            print "Processing:", name
+            log.debug("Processing:" +  name)
             
             # get contact refs from pin refs
             for pinref in net.pinrefs:
@@ -532,23 +523,22 @@ class EagleSchematic(EagleFile):
                 pin = pinref.get("pin")
                 pad = self.gatePinToPad(part=part_name, gate=gate, pin=pin)
                 
-                print "\tpinref:", part_name, gate, pin, pad
+                log.debug("\tpinref:" +  part_name + gate  + pin + pad)
                 
                 if pad is None:
                     continue
                 
                 net.contactrefs.append(ET.Element("contactref", element=part_name, pad=pad))
                 
-            #print "For signal:", net.name, "got:", net.contactrefs
+            #log.debug("For signal:", net.name, "got:", net.contactrefs
             
             if net.valid():
                 signal = ET.Element("signal", name=net.name)
                 signal.extend(net.contactrefs)
                 board.getSignals().append(signal)
         
-        print "Finished board conversion."
-        print
-        
+        log.debug("Finished board conversion.")
+
         return board
         
         
